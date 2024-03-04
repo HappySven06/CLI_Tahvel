@@ -1,1 +1,1 @@
-# CLI_Tahvel
+# CLI Tahvel script for tampermonkey

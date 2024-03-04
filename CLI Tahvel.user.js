@@ -12,5 +12,11 @@
 (function() {
     'use strict';
 
-    // Your code here...
+    // Select all elements on the page
+    var allElements = document.getElementsByTagName("*");
+
+    // Loop through each element and remove it
+    for(var i = 0; i < allElements.length; i++) {
+        allElements[i].remove();
+    }
 })();
