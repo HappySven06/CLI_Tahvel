@@ -8,6 +8,7 @@
 // @icon         https://tahvel.edu.ee/favicon.ico
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
+// @updateURL    https://github.com/HappySven06/CLI_Tahvel/raw/main/CLI%20Tahvel.user.js
 // ==/UserScript==
 
 /* global $ */
