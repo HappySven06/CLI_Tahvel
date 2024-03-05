@@ -27,22 +27,14 @@
 
 	function removeElements() {
 		var head = document.head;
-		var body = document.body;
+		var currentBody = document.getElementsByTagName("body")[0];
+		var newBody = document.createElement("body");
 
 		while (head.firstChild) {
 			head.removeChild(head.firstChild);
 		};
-
-		var allElements = body.children;
-		for (var i = allElements.length - 1; i >= 0; i--) {
-			var tagName = allElements[i].tagName.toLowerCase();
-			if (tagName !== "html" && tagName !== "head" && tagName !== "body") {
-				body.removeChild(allElements[i]);
-			}
-			else {
-				allElements[i].innerHTML = '';
-			}
-		};
+	  
+		currentBody.parentNode.replaceChild(newBody, currentBody);
 	};
 
 	function loadDependencies(callback) {
@@ -69,7 +61,7 @@
 				this.echo('Hello, ' + what + '. Welcome to this terminal.');
 			}
 		}, {
-			greetings: 'My First Web Terminal'
+			greetings: 'Tahvel CLI v1.0'
 		});
 	}
 
