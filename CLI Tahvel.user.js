@@ -69,6 +69,9 @@
 			hello: function (what) {
 				this.echo('Hello, ' + what + '. Welcome to this terminal.');
 			},
+			neeger: function() {
+				window.location.href = 'https://neeger.ee/'
+			},
             faggot: function() {
                 this.echo("fag");
             }
