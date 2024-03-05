@@ -26,6 +26,14 @@
         }
     `;
 
+    class User {
+        constructor(username, group, lastGrades) {
+            this.username = username;
+            this.group = group;
+            this.lastGrades = lastGrades;
+        }
+    }
+
 	function removeElements() {
 		var head = document.head;
 		var currentBody = document.getElementsByTagName("body")[0];
@@ -60,14 +68,53 @@
 		$('body').terminal({
 			hello: function (what) {
 				this.echo('Hello, ' + what + '. Welcome to this terminal.');
-			}
+			},
+            faggot: function() {
+                this.echo("fag");
+            }
 		}, {
 			greetings: 'Tahvel CLI v1.0'
 		});
 	}
 
-	removeElements();
+    function getCookie(cname) {
+        let name = cname + "=";
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let ca = decodedCookie.split(';');
+        for(let i = 0; i <ca.length; i++) {
+          let c = ca[i];
+          while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+          }
+          if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+          }
+        }
+        return "";
+      }
 
-	loadDependencies(initTerminal);
-	GM_addStyle(CSS);
+	//removeElements();
+	//loadDependencies(initTerminal);
+	//GM_addStyle(CSS);
+    const timer = ms => new Promise(res => setTimeout(res, ms))
+    let username = document.getElementById('user-menu-name');
+    let group = document.getElementById('user-menu-button');
+    let lastGradesTable = (document.getElementsByClassName("home-grades-section-content"));
+    console.log(lastGradesTable[0]);
+    let usernametext = username.innerText;
+    let grouptext = group.ariaLabel;
+    async function getUserData() {
+        while(username.innerText == "") {
+            usernametext = username.innerText;
+            await timer(500);
+        }
+        grouptext = group.ariaLabel;
+    }
+    async function index() {
+        await getUserData()
+        var regex = /\((.*?)\)/
+        grouptext = grouptext.match(regex)[1];
+    }
+    index();
+    //let currentUser = User()
 })();
