@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      2024-03-04
 // @description  CLI for Tahvel
-// @author       Sven Laht
+// @author       Sven Laht, Sebastian Pebsen Zachrau
 // @match        https://tahvel.edu.ee/
 // @icon         https://tahvel.edu.ee/favicon.ico
 // @grant        GM_addStyle
