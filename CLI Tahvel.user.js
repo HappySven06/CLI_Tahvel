@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      2024-03-04
 // @description  CLI for Tahvel
-// @author       Sven Laht
+// @author       Sven Laht, Sebastian Pebsen Zachrau
 // @match        https://tahvel.edu.ee/
 // @icon         https://tahvel.edu.ee/favicon.ico
 // @grant        GM_addStyle
@@ -44,6 +44,8 @@
 		};
 	  
 		currentBody.parentNode.replaceChild(newBody, currentBody);
+
+        localStorage.removeItem('0_commands');
 	};
 
 	function loadDependencies(callback) {
@@ -66,9 +68,33 @@
 
 	function initTerminal() {
 		$('body').terminal({
-			hello: function (what) {
-				this.echo('Hello, ' + what + '. Welcome to this terminal.');
+			help: function () {
+				//log all commands
 			},
+            login: function(type) {
+                if(type === 'hari'){
+                    window.location.href = 'https://tahvel.edu.ee/hois_back/haridLogin';
+                }
+                else if(type === 'smartid'){
+                    window.location.href = 'https://tahvel.edu.ee/hois_back/taraLogin';
+                }
+                else{
+                    this.echo('Login option does not exist: ' + type);
+                }
+            },
+            grades: function(scale) {
+                window.location.href = 'students/journals'
+
+                if(scale === 'recent'){
+
+                }
+                else if(scale === 'all'){
+
+                }
+                else{
+                    this.echo('Grade option does not exist: ' + scale);
+                }
+            },
 			neeger: function() {
 				window.location.href = 'https://neeger.ee/'
 			},
@@ -96,9 +122,11 @@
         return "";
       }
 
-	//removeElements();
-	//loadDependencies(initTerminal);
-	//GM_addStyle(CSS);
+	removeElements();
+	loadDependencies(initTerminal);
+	GM_addStyle(CSS);
+
+    /*
     const timer = ms => new Promise(res => setTimeout(res, ms))
     let username = document.getElementById('user-menu-name');
     let group = document.getElementById('user-menu-button');
@@ -120,4 +148,5 @@
     }
     index();
     //let currentUser = User()
+    */
 })();
