@@ -44,6 +44,8 @@
 		};
 	  
 		currentBody.parentNode.replaceChild(newBody, currentBody);
+
+		localStorage.removeItem('0_commands');
 	};
 
 	function loadDependencies(callback) {
