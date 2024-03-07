@@ -16,7 +16,8 @@
 (function () {
     'use strict';
 
-    var CSS = `
+    //global variables
+    let CSS = `
         :root {
             --color: #aaa;
             --background: #000;
@@ -37,11 +38,14 @@
     }
     let user = new User();
 
+    let hasBeenCalled = false;
+    let hasGreetingBeenCalled = false;
+
     //start up functions
     function removeElements() {
-        var head = document.head;
-        var currentBody = document.getElementsByTagName("body")[0];
-        var newBody = document.createElement("body");
+        let head = document.head;
+        let currentBody = document.getElementsByTagName("body")[0];
+        let newBody = document.createElement("body");
 
         while (head.firstChild) {
             head.removeChild(head.firstChild);
@@ -53,13 +57,13 @@
     };
 
     function loadDependencies(callback) {
-        var jqueryScript = document.createElement('script');
+        let jqueryScript = document.createElement('script');
         jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
         jqueryScript.onload = function () {
-            var terminalScript = document.createElement('script');
+            let terminalScript = document.createElement('script');
             terminalScript.src = 'https://cdn.jsdelivr.net/npm/jquery.terminal@2.x.x/js/jquery.terminal.min.js';
             terminalScript.onload = function () {
-                var terminalCSS = document.createElement('link');
+                let terminalCSS = document.createElement('link');
                 terminalCSS.rel = 'stylesheet';
                 terminalCSS.href = 'https://cdn.jsdelivr.net/npm/jquery.terminal@2.x.x/css/jquery.terminal.min.css';
                 terminalCSS.onload = callback;
@@ -73,7 +77,9 @@
     function initTerminal() {
         $('body').terminal({
             help: function () {
-                //log all commands
+                this.echo("Available commands:");
+                this.echo("| login [type] - Login to the system. Options: 'hari' or 'smartid'");
+                this.echo("| grades [scale] - View grades. Options: 'recent' or 'all'");
             },
             login: function (type) {
                 if (type === 'hari') {
@@ -89,21 +95,23 @@
             grades: function (scale) {
                 window.location.href = '#/students/journals'
 
-                var grades = getGrades();
+                let grades = getGrades();
 
                 if (scale === 'recent') {
                     this.echo(`\nRecent grades: \n`)
                     user.recentGrades.forEach(element => {
-                        this.echo(`${element.grade.code[element.grade.code.length-1]} -- ${element.nameEt} -- ${element.teacher}`)
+                        this.echo(`${element.grade.code[element.grade.code.length - 1]} -- ${element.nameEt} -- ${element.teacher}`)
                     });
-                }   
+                }
                 else if (scale === 'all') {
                     this.echo(`\nAll grades:\n`)
                     user.grades.forEach(el => {
                         this.echo("=".repeat(40))
                         this.echo(el.nameEt)
                         el.journalEntries.forEach(hinne => {
-                            this.echo(`| ${hinne.grade.code ? hinne.grade.code[hinne.grade.code.length-1] : 'No Grade'} - ${hinne.addInfo ?? 'No info'}`)
+                            if (hinne.grade !== null) {
+                                this.echo(`| ${hinne.grade.code ? hinne.grade.code[hinne.grade.code.length - 1] : 'No Grade'} - ${hinne.addInfo ?? 'No info'}`)
+                            }
                         })
                     });
                 }
@@ -118,22 +126,12 @@
                 this.echo("fag");
             }
         }, {
-            //greetings: 'Tahvel CLI v1.0' + '\n' + 'Tahvel ' + localStorage.getItem('TAHVEL_VERSION')
-            greetings: async function(){
-                var tahvelVersion = localStorage.getItem('TAHVEL_VERSION');
-                var loggedin = getCookie('XSRF-TOKEN');
-                //console.log(loggedin);
+            greetings: function () {
+                if (hasGreetingBeenCalled === false) {
+                    this.clear();
+                    this.echo(createGreeting());
 
-                if(loggedin !== ''){
-                    let userdata = await (await fetch('https://tahvel.edu.ee/hois_back/user')).json();
-                    let studyyears = await (await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalStudyYears?studentId=${userdata.student}`)).json();
-                    let grades = await getGrades(userdata.student ,studyyears[studyyears.length-1])
-                    let recentGrades = await(await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalLastResults?studentId=${userdata.student}`)).json();
-                    user = new User(userdata.student,userdata.fullname, userdata.users[0].studentGroup, grades, recentGrades)
-                    await this.echo(`Tahvel CLI v1.0 \nTahvel ${tahvelVersion}\nLogged in as ${user.username}`);
-                }
-                else{
-                    await this.echo('Tahvel CLI v1.0' + '\n' + 'Tahvel ' + tahvelVersion);
+                    hasGreetingBeenCalled = true;
                 }
             }
         });
@@ -142,7 +140,7 @@
     //utility functions
     async function getGrades(userId, studyYear) {
         let url = `https://tahvel.edu.ee/hois_back/journals/studentJournals?studentId=${userId}&studyYearId=${studyYear.id}`;
-        
+
         return await fetch(url, {
             method: 'GET',
         })
@@ -164,17 +162,50 @@
         let name = cname + "=";
         let decodedCookie = decodeURIComponent(document.cookie);
         let ca = decodedCookie.split(';');
-        for(let i = 0; i <ca.length; i++) {
-          let c = ca[i];
-          while (c.charAt(0) == ' ') {
-            c = c.substring(1);
-          }
-          if (c.indexOf(name) == 0) {
-            return c.substring(name.length, c.length);
-          }
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) == ' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+                return c.substring(name.length, c.length);
+            }
         }
         return '';
     }
+
+    async function newUser() {
+        console.log(hasBeenCalled);
+
+        if (hasBeenCalled === false) {
+            let userdata = await (await fetch('https://tahvel.edu.ee/hois_back/user')).json();
+            let studyyears = await (await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalStudyYears?studentId=${userdata.student}`)).json();
+            let grades = await getGrades(userdata.student, studyyears[studyyears.length - 1])
+            let recentGrades = await (await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalLastResults?studentId=${userdata.student}`)).json();
+            user = new User(userdata.student, userdata.fullname, userdata.users[0].studentGroup, grades, recentGrades)
+
+            hasBeenCalled = true
+        }
+    }
+
+    function createGreeting() {
+        return new Promise(async (resolve, reject) => {
+            let tahvelVersion = localStorage.getItem('TAHVEL_VERSION');
+            let loggedin = getCookie('XSRF-TOKEN');
+
+            if (loggedin !== '') {
+                try {
+                    await newUser();
+                    resolve(`Tahvel CLI v1.0 \nTahvel ${tahvelVersion}\nLogged in as ${user.username}`);
+                } catch (error) {
+                    reject(error);
+                }
+            } else {
+                resolve(`Tahvel CLI v1.0 \nTahvel ${tahvelVersion}`);
+            }
+        });
+    }
+
     //start up
     removeElements();
     loadDependencies(initTerminal);
