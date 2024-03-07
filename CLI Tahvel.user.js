@@ -92,13 +92,20 @@
                 var grades = getGrades();
 
                 if (scale === 'recent') {
-                    this.echo(`Recent grades: \n`)
+                    this.echo(`\nRecent grades: \n`)
                     user.recentGrades.forEach(element => {
                         this.echo(`${element.grade.code[element.grade.code.length-1]} -- ${element.nameEt} -- ${element.teacher}`)
                     });
                 }   
                 else if (scale === 'all') {
-                    //console.log(grades)
+                    this.echo(`\nAll grades:\n`)
+                    user.grades.forEach(el => {
+                        this.echo("=".repeat(40))
+                        this.echo(el.nameEt)
+                        el.journalEntries.forEach(hinne => {
+                            this.echo(`| ${hinne.grade.code ? hinne.grade.code[hinne.grade.code.length-1] : 'No Grade'} - ${hinne.addInfo ?? 'No info'}`)
+                        })
+                    });
                 }
                 else {
                     this.echo('Grade option does not exist: ' + scale);
