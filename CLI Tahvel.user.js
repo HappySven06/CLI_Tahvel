@@ -27,13 +27,15 @@
     `;
 
     class User {
-        constructor(id, username, group, grades) {
+        constructor(id, username, group, grades, recentGrades) {
             this.id = id;
             this.username = username;
             this.group = group;
             this.grades = grades;
+            this.recentGrades = recentGrades
         }
     }
+    let user = new User();
 
     //start up functions
     function removeElements() {
@@ -90,8 +92,11 @@
                 var grades = getGrades();
 
                 if (scale === 'recent') {
-
-                }
+                    this.echo(`Recent grades: \n`)
+                    user.recentGrades.forEach(element => {
+                        this.echo(`${element.grade.code[element.grade.code.length-1]} -- ${element.nameEt} -- ${element.teacher}`)
+                    });
+                }   
                 else if (scale === 'all') {
                     //console.log(grades)
                 }
@@ -110,18 +115,18 @@
             greetings: async function(){
                 var tahvelVersion = localStorage.getItem('TAHVEL_VERSION');
                 var loggedin = getCookie('XSRF-TOKEN');
-                let user = null;
-                console.log(loggedin);
+                //console.log(loggedin);
 
                 if(loggedin !== ''){
                     let userdata = await (await fetch('https://tahvel.edu.ee/hois_back/user')).json();
                     let studyyears = await (await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalStudyYears?studentId=${userdata.student}`)).json();
                     let grades = await getGrades(userdata.student ,studyyears[studyyears.length-1])
-                    user = new User(userdata.student,userdata.fullname, userdata.users[0].studentGroup, grades)
-                    this.echo(`Tahvel CLI v1.0 \nTahvel ${tahvelVersion}\nLogged in as ${user.username}`);
+                    let recentGrades = await(await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalLastResults?studentId=${userdata.student}`)).json();
+                    user = new User(userdata.student,userdata.fullname, userdata.users[0].studentGroup, grades, recentGrades)
+                    await this.echo(`Tahvel CLI v1.0 \nTahvel ${tahvelVersion}\nLogged in as ${user.username}`);
                 }
                 else{
-                    this.echo('Tahvel CLI v1.0' + '\n' + 'Tahvel ' + tahvelVersion);
+                    await this.echo('Tahvel CLI v1.0' + '\n' + 'Tahvel ' + tahvelVersion);
                 }
             }
         });
@@ -163,7 +168,6 @@
         }
         return '';
     }
-
     //start up
     removeElements();
     loadDependencies(initTerminal);
