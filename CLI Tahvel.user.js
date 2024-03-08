@@ -28,12 +28,13 @@
     `;
 
     class User {
-        constructor(id, username, group, grades, recentGrades) {
+        constructor(id, username, group, grades, recentGrades, homework) {
             this.id = id;
             this.username = username;
             this.group = group;
             this.grades = grades;
-            this.recentGrades = recentGrades
+            this.recentGrades = recentGrades;
+            this.homework = homework
         }
     }
     let user = new User();
@@ -101,8 +102,6 @@
             grades: function (scale) {
                 window.location.href = '#/students/journals'
 
-                let grades = getGrades();
-
                 if (scale === 'recent') {
                     this.echo(`\nRecent grades: \n`)
                     user.recentGrades.forEach(element => {
@@ -126,7 +125,13 @@
                 }
             },
             homework: function () {
+                window.location.href = '#/students/tasks'
 
+                user.homework.forEach(task => {
+                    if(task.isDone !== true) {
+                        this.echo(`| ${task.date.split('T')[0]} - ${task.journalName} - ${task.taskContent}`);
+                    }
+                })
             },
             timetable: function (date) {
 
@@ -194,7 +199,9 @@
             let studyyears = await (await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalStudyYears?studentId=${userdata.student}`)).json();
             let grades = await getGrades(userdata.student, studyyears[studyyears.length - 1])
             let recentGrades = await (await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalLastResults?studentId=${userdata.student}`)).json();
-            user = new User(userdata.student, userdata.fullname, userdata.users[0].studentGroup, grades, recentGrades)
+            let homework = await (await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalTasks?studentId=${userdata.student}`)).json();
+            console.log(homework.tasks);
+            user = new User(userdata.student, userdata.fullname, userdata.users[0].studentGroup, grades, recentGrades, homework.tasks)
 
             hasBeenCalled = true
         }
