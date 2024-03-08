@@ -28,12 +28,13 @@
     `;
 
     class User {
-        constructor(id, username, group, grades, recentGrades) {
+        constructor(id, username, group, grades, recentGrades, homework) {
             this.id = id;
             this.username = username;
             this.group = group;
             this.grades = grades;
-            this.recentGrades = recentGrades
+            this.recentGrades = recentGrades;
+            this.homework = homework
         }
     }
     let user = new User();
@@ -78,8 +79,9 @@
         $('body').terminal({
             help: function () {
                 this.echo("Available commands:");
-                this.echo("| login [type] - Login to the system. Options: 'hari' or 'smartid'");
-                this.echo("| grades [scale] - View grades. Options: 'recent' or 'all'");
+                this.echo("| login [option] - Login into tahvel. Options: 'hari' or 'smartid'");
+                this.echo("| grades [option] - View grades. Options: 'recent' or 'all'");
+                this.echo("| homework - View homework assignments.");
             },
             login: function (type) {
                 if (type === 'hari') {
@@ -94,8 +96,6 @@
             },
             grades: function (scale) {
                 window.location.href = '#/students/journals'
-
-                let grades = getGrades();
 
                 if (scale === 'recent') {
                     this.echo(`\nRecent grades: \n`)
@@ -118,6 +118,15 @@
                 else {
                     this.echo('Grade option does not exist: ' + scale);
                 }
+            },
+            homework: function () {
+                window.location.href = '#/students/tasks'
+
+                user.homework.forEach(task => {
+                    if(task.isDone !== true) {
+                        this.echo(`| ${task.date.split('T')[0]} - ${task.journalName} - ${task.taskContent}`);
+                    }
+                })
             },
             neeger: function () {
                 window.location.href = 'https://neeger.ee/'
@@ -182,7 +191,9 @@
             let studyyears = await (await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalStudyYears?studentId=${userdata.student}`)).json();
             let grades = await getGrades(userdata.student, studyyears[studyyears.length - 1])
             let recentGrades = await (await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalLastResults?studentId=${userdata.student}`)).json();
-            user = new User(userdata.student, userdata.fullname, userdata.users[0].studentGroup, grades, recentGrades)
+            let homework = await (await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalTasks?studentId=${userdata.student}`)).json();
+            console.log(homework.tasks);
+            user = new User(userdata.student, userdata.fullname, userdata.users[0].studentGroup, grades, recentGrades, homework.tasks)
 
             hasBeenCalled = true
         }
