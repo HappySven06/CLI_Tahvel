@@ -35,11 +35,14 @@
             this.grades = grades;
             this.recentGrades = recentGrades
         }
-    }
+    };
     let user = new User();
 
     let hasBeenCalled = false;
     let hasGreetingBeenCalled = false;
+
+    let time;
+    let timeUtc;
 
     //start up functions
     function removeElements() {
@@ -56,7 +59,7 @@
         localStorage.removeItem('0_commands');
     };
 
-    function loadDependencies(callback) {
+    function loadTerminal(callback) {
         let jqueryScript = document.createElement('script');
         jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
         jqueryScript.onload = function () {
@@ -74,15 +77,42 @@
         document.head.appendChild(jqueryScript);
     };
 
+    function loadDayJs(callback) {
+        const scriptDayjs = document.createElement('script');
+        scriptDayjs.src = 'https://cdn.jsdelivr.net/npm/dayjs@1.10.7';
+        scriptDayjs.onload = function () {
+            callback();
+        };
+        document.head.appendChild(scriptDayjs);
+    };
+
+    function loadUtc(callback) {
+        const scriptUtc = document.createElement('script');
+        scriptUtc.src = 'https://cdn.jsdelivr.net/npm/dayjs@1.10.7/plugin/utc';
+        scriptUtc.onload = function () {
+            callback();
+        };
+        document.head.appendChild(scriptUtc);
+    };
+
+    function initDayjs() {
+        time = dayjs();
+    };
+
+    function initUtc() {
+        dayjs.extend(window.dayjs_plugin_utc);
+        time = dayjs.utc();
+    };
+
     function initTerminal() {
         $('body').terminal({
             help: function () {
                 this.echo("Available commands:");
-                this.echo("| login [option] - Login into tahvel. Options: 'hari' or 'smartid'");
+                this.echo("| login [option] - Login into tahvel. Options: 'hari', 'smartid'");
                 this.echo("| logout - Logout of tahvel.");
-                this.echo("| grades [option] - View grades. Options: 'recent' or 'all'");
+                this.echo("| grades [option] - View grades. Options: 'recent', 'all'");
                 this.echo("| homework - View homework assignments.");
-                this.echo("| timetable [option] - View timetable for a specific date.");
+                this.echo("| timetable [option] - View timetable for a specific date. Options: 'today', 'tomorrow', 'thisweek', 'nextweek'");
             },
             login: function (type) {
                 if (type === 'hari') {
@@ -95,7 +125,7 @@
                     this.echo('Login option does not exist: ' + type);
                 }
             },
-            logout: function() {
+            logout: function () {
 
             },
             grades: function (scale) {
@@ -128,8 +158,51 @@
             homework: function () {
 
             },
-            timetable: function (date) {
+            timetable: function (paramiter) {
+                let from;
+                let thru;
 
+                if (paramiter === 'today') {
+                    from = time.format('YYYY-MM-DDT00:00:00.000[Z]');
+                    thru = time.format('YYYY-MM-DDT00:00:00.000[Z]');
+
+                    formatDay(from, thru)
+                        .then(responce => {
+                            this.echo(responce);
+                        });
+                }
+                else if (paramiter === 'tomorrow') {
+                    from = time.add(1, 'd').format('YYYY-MM-DDT00:00:00.000[Z]');
+                    thru = time.add(1, 'd').format('YYYY-MM-DDT00:00:00.000[Z]');
+
+                    formatDay(from, thru)
+                        .then(responce => {
+                            this.echo(responce);
+                        });
+                }
+                else if (paramiter === 'thisweek') {
+                    from = time.format('YYYY-MM-DDT00:00:00.000[Z]');
+                    thru = time.add(7, 'd').format('YYYY-MM-DDT00:00:00.000[Z]');
+
+                    formatWeek(from, thru)
+                        .then(responce => {
+                            this.echo(responce);
+                        });
+                }
+                else if (paramiter === 'nextweek') {
+                    from = time.add(1, 'w').format('YYYY-MM-DDT00:00:00.000[Z]');
+                    thru = time.add(1, 'w').add(7, 'd').format('YYYY-MM-DDT00:00:00.000[Z]');
+
+                    formatWeek(from, thru)
+                        .then(responce => {
+                            this.echo(responce);
+                        });
+
+                    //console.log(`${from}\n${thru}`)
+                }
+                else {
+                    this.echo('Timetable option does not exist: ' + paramiter);
+                }
             },
             neeger: function () {
                 window.location.href = 'https://neeger.ee/'
@@ -147,7 +220,7 @@
                 }
             }
         });
-    }
+    };
 
     //utility functions
     async function getGrades(userId, studyYear) {
@@ -168,7 +241,7 @@
             .catch(error => {
                 this.echo(error);
             });
-    }
+    };
 
     function getCookie(cname) {
         let name = cname + "=";
@@ -184,11 +257,9 @@
             }
         }
         return '';
-    }
+    };
 
     async function newUser() {
-        console.log(hasBeenCalled);
-
         if (hasBeenCalled === false) {
             let userdata = await (await fetch('https://tahvel.edu.ee/hois_back/user')).json();
             let studyyears = await (await fetch(`https://tahvel.edu.ee/hois_back/journals/studentJournalStudyYears?studentId=${userdata.student}`)).json();
@@ -198,6 +269,106 @@
 
             hasBeenCalled = true
         }
+    };
+
+    function getTimetable(from, thru) {
+        return new Promise(async (resolve, reject) => {
+            const response = await fetch(`https://tahvel.edu.ee/hois_back/timetableevents/timetableByStudent/14?from=${from}&student=${user.id}&thru=${thru}`);
+            const timetable = await response.json();
+            const timetableData = timetable.timetableEvents;
+            resolve(timetableData);
+        });
+    };
+
+    function devideClasses(timetable, from, thru) {
+        let week = [];
+        let timeCurrent = dayjs(from);
+        let timeScope = dayjs(thru);
+
+        while (timeCurrent.isBefore(timeScope)) {
+            let arr = [];
+            for (let i = 0; i < timetable.length; i++) {
+                if (timetable[i].date) { // Check if 'date' property exists
+                    let c = dayjs(timetable[i].date);
+                    if (c.isSame(timeCurrent, 'day')) {
+                        arr.push(timetable[i]);
+                    }
+                }
+            }
+            week.push(arr);
+            timeCurrent = timeCurrent.add(1, 'd');
+        }
+
+        return week;
+    };
+
+    function formatDay(from, thru) {
+        return new Promise((resolve, reject) => {
+            let response = '';
+    
+            getTimetable(from, thru)
+                .then(timetable => {
+                    let c = timetable;
+                    if (c.length !== 0) {
+                        let currentDay = dayjs(c[0].date).format('dddd');
+                        response += `${currentDay}:\n`;
+
+                        c.sort((a, b) => {
+                            return a.timeStart.localeCompare(b.timeStart);
+                        });
+
+                        for (let j = 0; j < c.length; j++) {
+                            let currentClass = c[j];
+                            if (currentClass && currentClass.teachers && currentClass.teachers.length > 0 && currentClass.rooms && currentClass.rooms.length > 0) {
+                                response += `| ${currentClass.timeStart}-${currentClass.timeEnd}, ${currentClass.nameEt}, ${currentClass.teachers[0].name}, ${currentClass.rooms[0].roomCode}\n`;
+                            } else {
+                                console.error('Teacher or room information not available for class:', currentClass);
+                            }
+                        }
+                    }
+                    resolve(response);
+                })
+                .catch(error => {
+                    reject(error);
+                });
+        })  
+    }
+
+    function formatWeek(from, thru) {
+        return new Promise((resolve, reject) => {
+            let response = '';
+    
+            getTimetable(from, thru)
+                .then(timetable => {
+                    return devideClasses(timetable, from, thru);
+                })
+                .then(week => {
+                    for (let i = 0; i < week.length; i++) {
+                        let c = week[i];
+                        if (c.length !== 0) {
+                            let currentDay = dayjs(c[0].date).format('dddd');
+                            response += `${currentDay}:\n`;
+    
+                            c.sort((a, b) => {
+                                return a.timeStart.localeCompare(b.timeStart);
+                            });
+    
+                            for (let j = 0; j < c.length; j++) {
+                                let currentClass = c[j];
+                                if (currentClass && currentClass.teachers && currentClass.teachers.length > 0 && currentClass.rooms && currentClass.rooms.length > 0) {
+                                    response += `| ${currentClass.timeStart}-${currentClass.timeEnd}, ${currentClass.nameEt}, ${currentClass.teachers[0].name}, ${currentClass.rooms[0].roomCode}\n`;
+                                } else {
+                                    console.error('Teacher or room information not available for class:', currentClass);
+                                }
+                            }
+                        }
+                    }
+                    resolve(response);
+                })
+                .catch(error => {
+                    reject(error);
+                });
+        });
     }
 
     function createGreeting() {
@@ -216,10 +387,14 @@
                 resolve(`Tahvel CLI v1.0 \nTahvel ${tahvelVersion}`);
             }
         });
-    }
+    };
 
     //start up
     removeElements();
-    loadDependencies(initTerminal);
+    loadTerminal(initTerminal);
+    loadDayJs(function () {
+        initDayjs();
+        loadUtc(initUtc);
+    });
     GM_addStyle(CSS);
 })();
