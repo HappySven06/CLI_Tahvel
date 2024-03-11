@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         CLI Tahvel TEST
+// @name         CLI Tahvel
 // @namespace    http://tampermonkey.net/
 // @version      2024-03-04
 // @description  CLI for Tahvel
