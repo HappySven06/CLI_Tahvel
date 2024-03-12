@@ -147,8 +147,6 @@
                 location.reload();
             },
             grades: function (scale) {
-                window.location.href = '#/students/journals'
-
                 if (scale === 'recent') {
                     this.echo(`\nRecent grades: \n`)
                     user.recentGrades.forEach(element => {
